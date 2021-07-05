@@ -391,17 +391,34 @@ defmodule Map do
 
   If `keys` contains keys that are not in `map`, they're simply ignored.
 
+  ## Tuple keys
+
+  Returns a tuple with all the values from `map` where the key
+  is in the tuple `keys`.
+
   ## Examples
 
       iex> Map.take(%{a: 1, b: 2, c: 3}, [:a, :c, :e])
       %{a: 1, c: 3}
 
+      iex> Map.take(%{a: 1, b: 2, c: 3}, {:c, :b, :a})
+      {3, 2, 1}
+
   """
-  @spec take(map, [key]) :: map
+  @spec take(map, [key] | tuple()) :: map
   def take(map, keys)
 
   def take(map, keys) when is_map(map) and is_list(keys) do
     take(keys, map, _acc = [])
+  end
+
+  def take(map, {}) when is_map(map), do: {}
+
+  def take(map, keys) when is_map(map) and is_tuple(keys) do
+    Enum.reduce(:erlang.size(keys)..1, [], fn idx, values ->
+      [get(map, :erlang.element(idx, keys)) | values]
+    end)
+    |> List.to_tuple()
   end
 
   def take(map, keys) when is_map(map) do
